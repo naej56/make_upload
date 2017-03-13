@@ -24,12 +24,14 @@ Dans ce cas le dossier prez_nom_du_fichier_a_partager sera toujours générer da
 - [ ] Ajout d'un fichier de conf
 - [ ] Ajout de la création d'une archvie avec option pour supprimer les fichiers
 - [ ] Gérer la récursivité dans un dossier
-- [ ] Ajouter un test pour ne traiter que les fichiers vidéo
+- [x] Ajouter un test pour ne traiter que les fichiers vidéo
 - [ ] Test le bon fonctionnement en utilisant le script avec un ``alias`` et depuis le ``$PATH``
 
 # Change logs
 ### 1.0.0.2
-Ajout du support des espaces dans les nom de dossiers et de fichiers
+- Ajout du support des espaces dans les nom de dossiers et de fichiers
+- Ajout du test pour ne traiter que les fichiers vidéo
+- Ajout de l'affichage Usage si le script est mal lancer
 
 #### 1.0.0.1
 Nettoyage du code pour le rendre plus lisible
