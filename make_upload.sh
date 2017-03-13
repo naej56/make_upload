@@ -33,14 +33,24 @@ DIR_LAUNCH=$(pwd)
 DIR_RELEASE="${1}"
 
 # fonctions
-aff () {
+disp () {
   timestamp=$(date +[%H:%M:%S])
   echo "${timestamp} : ${1}"
 }
 
+is_video () {
+  # test si le fichier est une video
+  local file="${1}"
+  local file_type=$(file -b -i "${file}" | cut -d / -f1)
+  if [[ ${file_type} != 'video' ]]; then
+    echo "Omission du fichier ${file} car il est de type : ${file_type}"
+    continue
+  fi
+}
+
 # verif param fournis au script
 if [[ -z "${DIR_RELEASE}" ]]; then
-  echo "Merci d'indiquer un fichier ou un dossier."
+  echo "Usage : ./make_upload.sh [fichier ou dossier]"
   exit
 fi
 
@@ -59,36 +69,43 @@ elif [[ -f "${DIR_RELEASE}" ]]; then
   file_bbcode="${DIR_LAUNCH}/${dir_prez}/BBcode.txt"
   file_torrent="${DIR_LAUNCH}/${dir_prez}/${release}.torrent"
   cd "$release_path"
+
+  # test si le fichier est une vidéo
+  file_type=$(file -b -i "${release}" | cut -d / -f1)
+  if [[ ${file_type} != 'video' ]]; then
+    echo "Omission du fichier ${release} car il est de type : ${file_type}"
+    exit
+  fi
   
   # creation des dossiers et fichiers
-  aff "Creation du dossier : ${dir_prez}"
+  disp "Creation du dossier : ${dir_prez}"
   mkdir -p "${DIR_LAUNCH}/${dir_prez}"
 
   # creation du nfo
-  aff "Traitement mediainfo du fichier : ${release}"
+  disp "Traitement mediainfo du fichier : ${release}"
   mediainfo "${release}" > "${file_nfo}"
-  aff "Fin de traitement mediainfo"
+  disp "Fin de traitement mediainfo"
 
   # creation de vignettes
-  aff "Creation de vignettes"
+  disp "Creation de vignettes"
   let duration="$(mediainfo --Inform="General;%Duration%" "${release}") / 60000"
   format_duration=$(mediainfo --Inform="Video;%Duration/String3%" "${release}")
-  aff "Duree de la video : ${format_duration}"
+  disp "Duree de la video : ${format_duration}"
   if [[ "${duration}" -lt "20" ]]; then
     thumbnail=4
   else
     thumbnail=8
   fi
-  aff "Nombre de vignettes : ${thumbnail}"
+  disp "Nombre de vignettes : ${thumbnail}"
   vcs -O bg_heading='#000000' -O bg_sign='#000000' -O bg_title='#000000' -O bg_contact='#000000' -O fg_heading='#808080' -O fg_sign='#808080' -O fg_title='#FF00FF' -n ${thumbnail} -c 2 -T "${release}" -o "${DIR_LAUNCH}/${dir_prez}/${release}.jpg" "${release}"
 
   # upload de la vignette sur casimages.com
-  aff "Upload et generation du BB code des vignettes"
+  disp "Upload et generation du BB code des vignettes"
   thumbnail_link=`echo n | pixup -s c "${DIR_LAUNCH}/${dir_prez}/${release}.jpg" | grep URL | sed -rn "s/.*\[img\](.*)\[\/img\].*/\1/p"`
   echo "[hide="${release}"][url=${thumbnail_link}][img=${thumbnail_link}][/url][/hide]" >> "${file_bbcode}"
   
   # creation du torrent
-  aff "Creation du torrent"
+  disp "Creation du torrent"
   let release_size="$(stat -c "%s" "${release}") / 1048576"
   if [ ${release_size} -lt 1000 ]; then
           part_size=20
@@ -113,7 +130,7 @@ elif [ -d "${DIR_RELEASE}" ]; then
   file_torrent="${DIR_LAUNCH}/${dir_prez}/${release}.torrent"
 
   # creation des dossiers et fichiers de sortie
-  aff "Creation des dossiers"
+  disp "Creation des dossiers"
   mkdir -p "${DIR_LAUNCH}/${dir_prez}/vignettes"
   echo -e "\n" > "${DIR_LAUNCH}/${dir_prez}/BBcode.txt"
 
@@ -125,35 +142,36 @@ elif [ -d "${DIR_RELEASE}" ]; then
   for release_file in ./*;do
    
     release_file=$(echo "${release_file}" | sed 's#\./##g')
+    is_video "${release_file}"
 
     # allimentation du nfo 
-    aff "Traitement mediainfo du fichier : ${release_file}"
+    disp "Traitement mediainfo du fichier : ${release_file}"
     mediainfo "${release_file}" >> "${file_nfo}"
     echo -e "\n" >> "${file_nfo}"
     echo "-----------------------------------------------------------" >> "${file_nfo}"
     echo -e "\n" >> "${file_nfo}"
 
     # creation de la vignettes
-    aff "Creation des vignettes du fichier : ${release_file}"
+    disp "Creation des vignettes du fichier : ${release_file}"
     let duration="$(mediainfo --Inform="General;%Duration%" "${release_file}") / 60000"
     duration_format=$(mediainfo --Inform="Video;%Duration/String3%" "${release_file}")
-    aff "Duree de la video : ${duration_format}"
+    disp "Duree de la video : ${duration_format}"
     if [[ "${duration}" -lt "20" ]]; then
       thumbnail_number=4
     else
       thumbnail_number=8
     fi
-    aff "Nombre de vignettes principales : ${thumbnail_number}"
+    disp "Nombre de vignettes principales : ${thumbnail_number}"
     vcs -O bg_heading='#000000' -O bg_sign='#000000' -O bg_title='#000000' -O bg_contact='#000000' -O fg_heading='#808080' -O fg_sign='#808080' -O fg_title='#FF00FF' -n $nombreVignette -c 2 -T "${release_file}" -o "${DIR_LAUNCH}/${dir_prez}/vignettes/${release_file}.jpg" "${release_file}"
 
     # upload des vignettes sur casimages.com
-    aff "Upload et generation du BB code de la vignette"
+    disp "Upload et generation du BB code de la vignette"
     thumbnail_link=$(echo n | pixup -s c "${DIR_LAUNCH}/${dir_prez}/vignettes/${release_file}.jpg" | grep URL | sed -rn "s/.*\[img\](.*)\[\/img\].*/\1/p")
     echo "[hide="${release_file}"][url=${thumbnail_link}][img=${thumbnail_link}][/url][/hide]" >> "${file_bbcode}"
   done
   
   # Creation du fichier torrent
-  aff "Creation du torrent"
+  disp "Creation du torrent"
   cd ..
   let release_size="$(du "${release}" | cut -f1) / 1048576"
   if [ ${release_size} -lt 1000 ]; then
@@ -167,5 +185,5 @@ elif [ -d "${DIR_RELEASE}" ]; then
 fi
 
 # fin de traitement
-aff "Fin de traitement"
+disp "Fin de traitement"
 
