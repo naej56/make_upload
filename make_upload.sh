@@ -3,7 +3,7 @@
 ############################################################
 #                                                          #
 #  Auteur  :  NaeJ                                         #
-#  Version :  1.0.0.2                                      #
+#  Version :  1.0.0.3                                      #
 #  Script  :  make_upload.sh                               #
 #                                                          #
 ############################################################
@@ -28,13 +28,17 @@
 
 
 clear
-# Variables
+############################################################
+#                      Variables                           #
+############################################################
 DIR_LAUNCH=$(pwd)
 DIR_RELEASE="${1}"
 
-# fonctions
+############################################################
+#                      Fonctions                           #
+############################################################
 disp () {
-  timestamp=$(date +[%H:%M:%S])
+  local timestamp=$(date +[%H:%M:%S])
   echo "${timestamp} : ${1}"
 }
 
@@ -47,6 +51,24 @@ is_video () {
     continue
   fi
 }
+
+create_zip () {
+  local zip_file="${1}.zip"
+  local dir_files="${1}"
+  local delete_dir="n"
+  zip -r "${zip_file}" "${dir_files}"
+
+  # demande la suppression du dossier
+  echo "Voulez-vous supprimer le dossier ${dir_files} ? (o/N)"
+  read delete_dir
+  if [[ "${delete_dir,,}" == "o" || "${delete_dir,,}" == "y" ]]; then
+    rm -r "${dir_files}"
+  fi
+}
+
+############################################################
+#                  Partie principale                       #
+############################################################
 
 # verif param fournis au script
 if [[ -z "${DIR_RELEASE}" ]]; then
@@ -114,8 +136,9 @@ elif [[ -f "${DIR_RELEASE}" ]]; then
   fi
   mktorrent -p -l ${part_size} -a http://t411.download/ -o "${file_torrent}" "${release}"
 
-  # TODO    : creation d'une archive zip contenant le fichier torrent, le BBcode et le nfo et proposer de supprimer les fichiers pour ne concerver que le zip
+  # création d'une archive zip et suppression des fichiers archivés
   cd "${DIR_LAUNCH}"
+  create_zip "${dir_prez}"
 
 # test si le chemin donner est un dossier
 elif [ -d "${DIR_RELEASE}" ]; then
@@ -151,7 +174,7 @@ elif [ -d "${DIR_RELEASE}" ]; then
     echo "-----------------------------------------------------------" >> "${file_nfo}"
     echo -e "\n" >> "${file_nfo}"
 
-    # creation de la vignettes
+    # creation des vignettes
     disp "Creation des vignettes du fichier : ${release_file}"
     let duration="$(mediainfo --Inform="General;%Duration%" "${release_file}") / 60000"
     duration_format=$(mediainfo --Inform="Video;%Duration/String3%" "${release_file}")
@@ -181,7 +204,10 @@ elif [ -d "${DIR_RELEASE}" ]; then
   fi
   mktorrent -p -l ${part_size} -a http://t411.download/ -o "${file_torrent}" "${release}"
 
-  # TODO    : creation d'une archive zip contenant le fichier torrent, le BBcode et le nfo et proposer de supprimer les fichiers pour ne concerver que le zip
+  # création d'une archive zip et suppression des fichiers archivés
+  cd "${DIR_LAUNCH}"
+  create_zip "${dir_prez}"
+
 fi
 
 # fin de traitement
