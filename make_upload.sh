@@ -32,34 +32,93 @@ clear
 #                      Variables                           #
 ############################################################
 DIR_LAUNCH=$(pwd)
-DIR_RELEASE="${1}"
+RELEASE='./'
+
+usage="Usage : ./make_upload.sh [FICHIER]"
+
+# mise en forme de texte
+txt_bold='\e[1m'
+txt_green='\e[32m'
+txt_yellow='\e[33m'
+txt_red='\e[31m'
+txt_reset='\e[0m'
+txt_reset_succ='\e[0m\e[32m'
+txt_reset_warn='\e[0m\e[33m'
+txt_reset_err='\e[0m\e[31'
 
 ############################################################
 #                      Fonctions                           #
 ############################################################
+
+# Affiche sur la sortie standard avec un horodatage
 disp () {
   local timestamp=$(date +[%H:%M:%S])
-  echo "${timestamp} : ${1}"
+  echo -e "${timestamp} : ${1} ${txt_reset}"
 }
 
-is_video () {
-  # test si le fichier est une video
-  local file="${1}"
-  local file_type=$(file -b -i "${file}" | cut -d / -f1)
-  if [[ ${file_type} != 'video' ]]; then
-    echo "Omission du fichier ${file} car il est de type : ${file_type}"
-    continue
+disp_succ () {
+  local timestamp=$(date +[%H:%M:%S])
+  echo -e "${timestamp} :${txt_green} ${1} ${txt_reset}"
+}
+
+disp_warn () {
+  local timestamp=$(date +[%H:%M:%S])
+  echo -e "${timestamp} :${txt_yellow} ${1} ${txt_reset}"
+}
+
+disp_err () {
+  local timestamp=$(date +[%H:%M:%S])
+  echo -e "${timestamp} :${txt_red} ${1} ${txt_reset}"
+}
+
+# Test les paramétres passés au script
+analyse_param () {
+  if [[ ${#} -eq 0 ]]; then
+    disp "${usage}"
+    exit
+  fi
+
+  if [[ ! -e "${1}" ]]; then
+    disp_err "${txt_bold}${1}${txt_reset} n'est pas un chemin valide ou le fichier n'existe pas."
+    exit
+  elif [[ -f "${1}" ]]; then
+    path_type='f'
+    RELEASE="${1}"
+  elif [[ -d "${1}" ]]; then
+    path_type='d'
+    RELEASE="${1}"
   fi
 }
 
+# initialisation de variables
+init_var () {
+  release_path=$(dirname "${RELEASE}")
+  release_name=$(basename "${RELEASE}")
+  dir_prez="prez_${release_name}"
+  file_nfo="${DIR_LAUNCH}/${dir_prez}/${release_name}.nfo"
+  file_bbcode="${DIR_LAUNCH}/${dir_prez}/BBcode.txt"
+  file_torrent="${DIR_LAUNCH}/${dir_prez}/${release_name}.torrent"
+}
+
+# test si le fichier est une vidéo
+is_video () {
+  local file="${1}"
+  local file_type=$(file -b -i "${file}" | cut -d / -f1)
+  if [[ ${file_type} != 'video' ]]; then
+    disp_err "Omission du fichier ${txt_bold}${file}${txt_reset_err} car il est de type : ${file_type}"
+    return 0
+  fi
+  return 1
+}
+
+# création de l'archive zip et suppression du dossier
 create_zip () {
   local zip_file="${1}.zip"
   local dir_files="${1}"
   local delete_dir="n"
   zip -r "${zip_file}" "${dir_files}"
 
-  # demande la suppression du dossier
-  echo "Voulez-vous supprimer le dossier ${dir_files} ? (o/N)"
+  disp_warn "Voulez-vous supprimer le dossier ${txt_bold}${dir_files}${txt_reset_warn} ? (o/N)"
   read delete_dir
   if [[ "${delete_dir,,}" == "o" || "${delete_dir,,}" == "y" ]]; then
     rm -r "${dir_files}"
@@ -67,20 +126,38 @@ create_zip () {
 }
 
 ############################################################
-#                  Partie principale                       #
+#                 Fonction principale                      #
 ############################################################
 
-# verif param fournis au script
-if [[ -z "${DIR_RELEASE}" ]]; then
-  echo "Usage : ./make_upload.sh [fichier ou dossier]"
-  exit
-fi
+main () {
+  analyse_param "$@"
+  init_var
 
-# test pour savoir si le chemin est valide
-if [[ ! -e "${DIR_RELEASE}" ]]; then
-  echo "${DIR_RELEASE} n'existe pas, merci de renseigner un chemin valide."
-  exit
-  
+  # Traitement pour un fichier
+  if [[ ${path_type} == 'f' ]]; then
+    # traitement pour un fichier
+    is_video "${release_name}"
+    ret=$?
+    if [[ $ret == 0 ]]; then
+      
+      exit
+    else
+
+
+  elif [[ ${path_type} == 'd' ]]; then
+    # traitement pour un dossier
+  else
+    disp_err "Erreur dans l'identification du chemin donné."
+    exit
+  fi
+
+}
+
+
+
+
+
+
 # test si le chemin donné est un fichier
 elif [[ -f "${DIR_RELEASE}" ]]; then
 
