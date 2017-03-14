@@ -20,11 +20,11 @@ Lancer la commande :
 Dans ce cas le dossier prez_nom_du_fichier_a_partager sera toujours générer dans le dossier où se trouve le script.
 
 # Todo
-- [x] Support des chemins avec espaces
+- [x] ~~Support des chemins avec espaces~~
 - [ ] Ajout d'un fichier de conf
-- [x] Ajout de la création d'une archvie avec option pour supprimer les fichiers
+- [x] ~~Ajout de la création d'une archvie avec option pour supprimer les fichiers~~
 - [ ] Gérer la récursivité dans un dossier
-- [x] Ajouter un test pour ne traiter que les fichiers vidéo
+- [x] ~~Ajouter un test pour ne traiter que les fichiers vidéo~~
 - [ ] Test le bon fonctionnement en utilisant le script avec un ``alias`` et depuis le ``$PATH``
 - [ ] Refactoriser le code pour utiliser des fonctions pour la création des vignettes, la génération du fichier torrent, du fichier BBcode.txt et du fichier nfo ainsi que pour la création du dossier contenant de sortie
 - [ ] Modifier la génération du BB code pour pouvoir le personaliser avec le fichier de conf
