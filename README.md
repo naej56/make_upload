@@ -26,11 +26,11 @@ Dans ce cas le dossier prez_nom_du_fichier_a_partager sera toujours générer da
 - [ ] Gérer la récursivité dans un dossier
 - [x] ~~Ajouter un test pour ne traiter que les fichiers vidéo~~
 - [ ] Test le bon fonctionnement en utilisant le script avec un ``alias`` et depuis le ``$PATH``
-- [ ] Refactoriser le code pour utiliser des fonctions pour la création des vignettes, la génération du fichier torrent, du fichier BBcode.txt et du fichier nfo ainsi que pour la création du dossier contenant de sortie
+- [x] ~~Refactoriser le code pour utiliser des fonctions pour la création des vignettes, la génération du fichier torrent, du fichier BBcode.txt et du fichier nfo ainsi que pour la création du dossier contenant de sortie~~
 - [ ] Ajouter un fichier texte avec les liens "brut" vers les vignettes et leurs miniatures
 - [ ] Modifier la génération du BB code pour pouvoir le personaliser avec le fichier de conf
 - [ ] Ajouter une prise en charge d'options (ex. : -c conf_file -a tracker_annonce_url -o output_dir -p (torrent privé))
-- [ ] Ajouter une mise ne forme des textes
+- [x] ~~Ajouter une mise ne forme des textes~~
 - [ ] Masquer la sortie standard des différents scripts / commandes (les rediriger vers un fichier log ?)
 
 # Change logs
