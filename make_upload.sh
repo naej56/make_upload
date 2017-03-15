@@ -93,35 +93,86 @@ analyse_param () {
 # initialisation de variables
 init_var () {
   release_path=$(dirname "${RELEASE}")
+  readonly release_path
   release_name=$(basename "${RELEASE}")
+  readonly release_name
   dir_prez="prez_${release_name}"
+  readonly dir_prez
   file_nfo="${DIR_LAUNCH}/${dir_prez}/${release_name}.nfo"
+  readonly file_nfo
   file_bbcode="${DIR_LAUNCH}/${dir_prez}/BBcode.txt"
+  readonly file_bbcode
   file_torrent="${DIR_LAUNCH}/${dir_prez}/${release_name}.torrent"
+  readonly file_torrent
 }
 
 # test si le fichier est une vidéo
 is_video () {
-  local file="${1}"
-  local file_type=$(file -b -i "${file}" | cut -d / -f1)
+  local input_file="${1}"
+  local file_type=$(file -b -i "${release_file}" | cut -d / -f1)
   if [[ ${file_type} != 'video' ]]; then
-    disp_err "Omission du fichier ${txt_bold}${file}${txt_reset_err} car il est de type : ${file_type}"
+    disp_err "Omission du fichier ${txt_bold}${input_file}${txt_reset_err} car il est de type : ${file_type}"
     return 0
   fi
   return 1
 }
 
+# création du nfo avec info issue de mediainfo
+create_nfo () {
+  local input_file="${1}"
+  local output_file="${2}"
+  disp "Creation du fichier nfo ..."
+  mediainfo "${input_file}" > "${output_file}"
+}
+
+# création et upload des vignettes
+create_thumbnail () {
+  local input_file="${1}"
+  local output_file="${2}"
+  local thumbnail_file="${DIR_LAUNCH}/${dir_prez}/${input_file}.jpg"
+  disp "Creation de vignettes ..."
+  let local duration="$(mediainfo --Inform="General;%Duration%" "${input_file}") / 60000"
+  local format_duration=$(mediainfo --Inform="Video;%Duration/String3%" "${input_file}")
+  if [[ "${duration}" -lt "20" ]]; then
+    thumbnail=4
+  else
+    thumbnail=8
+  fi
+  disp "Durée de la vidéo : ${format_duration}, nombre de vignettes : ${thumbnail}"
+  vcs -O bg_heading='#000000' -O bg_sign='#000000' \
+  -O bg_title='#000000' -O bg_contact='#000000' \
+  -O fg_heading='#808080' -O fg_sign='#808080' \
+  -O fg_title='#FF00FF' -n ${thumbnail} -c 2 -T "${input_file}" -o "${thumbnail_file}" "${input_file}"
+  disp "Upload et generation du BB code des vignettes"
+  thumbnail_link=`echo n | pixup -s c "${input_file}" | grep URL | sed -rn "s/.*\[img\](.*)\[\/img\].*/\1/p"`
+  echo "[hide="${release}"][url=${thumbnail_link}][img=${thumbnail_link}][/url][/hide]" >> "${output_file}"
+}
+
+# création du fichier torrent
+create_torrent () {
+  local input_file="${1}"
+  local output_file="${2}"
+  disp "Creation du torrent ..."
+  let local release_size="$(stat -c "%s" "${input_file}") / 1048576"
+  if [ ${release_size} -lt 1000 ]; then
+          part_size=20
+  else
+          part_size=21
+  fi
+  mktorrent -p -l ${part_size} -a http://t411.download/ -o "${output_file}" "${input_file}"
+}
+
 # création de l'archive zip et suppression du dossier
 create_zip () {
-  local zip_file="${1}.zip"
-  local dir_files="${1}"
+  local input_file="${1}"
+  local output_file="${1}.zip"
   local delete_dir="n"
-  zip -r "${zip_file}" "${dir_files}"
+  zip -r "${output_file}" "${input_file}"
 
-  disp_warn "Voulez-vous supprimer le dossier ${txt_bold}${dir_files}${txt_reset_warn} ? (o/N)"
+  disp_warn "Voulez-vous supprimer le dossier ${txt_bold}${input_file}${txt_reset_warn} ? (o/N)"
   read delete_dir
   if [[ "${delete_dir,,}" == "o" || "${delete_dir,,}" == "y" ]]; then
-    rm -r "${dir_files}"
+    rm -r "${input_file}"
   fi
 }
 
@@ -135,17 +186,27 @@ main () {
 
   # Traitement pour un fichier
   if [[ ${path_type} == 'f' ]]; then
-    # traitement pour un fichier
+    cd "${release_path}"
+    disp "Creation du dossier : ${dir_prez}"
+    mkdir -p "${DIR_LAUNCH}/${dir_prez}"
     is_video "${release_name}"
     ret=$?
     if [[ $ret == 0 ]]; then
-      
+      rm -r "${DIR_LAUNCH}/${dir_prez}"
+      disp "Aucun autre fichier a traiter fin de traitement."
       exit
-    else
+    fi
+    
+    create_nfo "${release_name}"
+    create_thumbnail "${release_name}" "${file_nfo}"
+    create_torrent "${release_name}" "${file_torrent}"
+    create_zip "${dir_prez}"
 
-
+  # Traitement pour un dossier
   elif [[ ${path_type} == 'd' ]]; then
-    # traitement pour un dossier
+    cd "${release_path}/${release_name}"
+
+
   else
     disp_err "Erreur dans l'identification du chemin donné."
     exit
@@ -158,64 +219,7 @@ main () {
 
 
 
-# test si le chemin donné est un fichier
-elif [[ -f "${DIR_RELEASE}" ]]; then
 
-  release_path=$(dirname "${DIR_RELEASE}")
-  release=$(basename "${DIR_RELEASE}")
-  dir_prez="prez_${release}"
-  file_nfo="${DIR_LAUNCH}/${dir_prez}/${release}.nfo"
-  file_bbcode="${DIR_LAUNCH}/${dir_prez}/BBcode.txt"
-  file_torrent="${DIR_LAUNCH}/${dir_prez}/${release}.torrent"
-  cd "$release_path"
-
-  # test si le fichier est une vidéo
-  file_type=$(file -b -i "${release}" | cut -d / -f1)
-  if [[ ${file_type} != 'video' ]]; then
-    echo "Omission du fichier ${release} car il est de type : ${file_type}"
-    exit
-  fi
-  
-  # creation des dossiers et fichiers
-  disp "Creation du dossier : ${dir_prez}"
-  mkdir -p "${DIR_LAUNCH}/${dir_prez}"
-
-  # creation du nfo
-  disp "Traitement mediainfo du fichier : ${release}"
-  mediainfo "${release}" > "${file_nfo}"
-  disp "Fin de traitement mediainfo"
-
-  # creation de vignettes
-  disp "Creation de vignettes"
-  let duration="$(mediainfo --Inform="General;%Duration%" "${release}") / 60000"
-  format_duration=$(mediainfo --Inform="Video;%Duration/String3%" "${release}")
-  disp "Duree de la video : ${format_duration}"
-  if [[ "${duration}" -lt "20" ]]; then
-    thumbnail=4
-  else
-    thumbnail=8
-  fi
-  disp "Nombre de vignettes : ${thumbnail}"
-  vcs -O bg_heading='#000000' -O bg_sign='#000000' -O bg_title='#000000' -O bg_contact='#000000' -O fg_heading='#808080' -O fg_sign='#808080' -O fg_title='#FF00FF' -n ${thumbnail} -c 2 -T "${release}" -o "${DIR_LAUNCH}/${dir_prez}/${release}.jpg" "${release}"
-
-  # upload de la vignette sur casimages.com
-  disp "Upload et generation du BB code des vignettes"
-  thumbnail_link=`echo n | pixup -s c "${DIR_LAUNCH}/${dir_prez}/${release}.jpg" | grep URL | sed -rn "s/.*\[img\](.*)\[\/img\].*/\1/p"`
-  echo "[hide="${release}"][url=${thumbnail_link}][img=${thumbnail_link}][/url][/hide]" >> "${file_bbcode}"
-  
-  # creation du torrent
-  disp "Creation du torrent"
-  let release_size="$(stat -c "%s" "${release}") / 1048576"
-  if [ ${release_size} -lt 1000 ]; then
-          part_size=20
-  else
-          part_size=21
-  fi
-  mktorrent -p -l ${part_size} -a http://t411.download/ -o "${file_torrent}" "${release}"
-
-  # création d'une archive zip et suppression des fichiers archivés
-  cd "${DIR_LAUNCH}"
-  create_zip "${dir_prez}"
 
 # test si le chemin donner est un dossier
 elif [ -d "${DIR_RELEASE}" ]; then
