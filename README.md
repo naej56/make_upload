@@ -25,18 +25,20 @@ Dans ce cas le dossier prez_nom_du_fichier_a_partager sera toujours générer da
 - [x] ~~Ajouter un test pour ne traiter que les fichiers vidéo~~
 - [x] ~~Refactoriser le code pour utiliser des fonctions pour la création des vignettes, la génération du fichier torrent, du fichier BBcode.txt et du fichier nfo ainsi que pour la création du dossier contenant de sortie~~
 - [x] ~~Ajouter une mise ne forme des textes~~
+- [x] ~~Test le bon fonctionnement en utilisant le script avec un ``alias`` et depuis le ``$PATH``~~
+- [x] ~~Gérer la récursivité dans un dossier~~
 - [ ] Ajouter un fichier texte avec les liens "brut" vers les vignettes et leurs miniatures
-- [ ] Masquer la sortie standard des différents scripts / commandes (les rediriger vers un fichier log ?)
-- [ ] Gérer la récursivité dans un dossier
-- [ ] Test le bon fonctionnement en utilisant le script avec un ``alias`` et depuis le ``$PATH``
 - [ ] Ajouter une prise en charge d'options (ex. : -c conf_file -a tracker_annonce_url -o output_dir -p (torrent privé))
 - [ ] Ajout d'un fichier de conf
 - [ ] Modifier la génération du BB code pour pouvoir le personaliser avec le fichier de conf
+- [ ] Masquer la sortie standard des différents scripts / commandes (les rediriger vers un fichier log ?)
 
 # Change logs
 ### 1.0.0.3
 - Ajout de la création d'une archvie avec option pour supprimer les fichiers
 - Ajout de commentaires
+- Test en utilisation par ``alias`` ou depuis le ``$PATH``
+- Gestion de la récursivité dans les dossiers et sous-dossiers
 
 ### 1.0.0.2
 - Ajout du support des espaces dans les nom de dossiers et de fichiers

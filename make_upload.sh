@@ -13,7 +13,7 @@
 #   - mktorrent     : http://mktorrent.sourceforge.net/    #
 #   - mediaInfo     : https://mediaarea.net/fr/MediaInfo   #
 #   - pixup         : https://framagit.org/PixUP/pixup     #
-#   - vcs (script)  : http://p.outlyer.net/vcs/            #
+#   - vcs           : http://p.outlyer.net/vcs/            #
 #                                                          #
 ############################################################
 #                                                          #
@@ -124,7 +124,8 @@ create_nfo () {
 create_thumbnail () {
   local input_file="${1}"
   local output_file="${2}"
-  local thumbnail_file="${DIR_LAUNCH}/${dir_prez}/${input_file}.jpg"
+  local input_file_name=$(basename "${input_file}")
+  local thumbnail_file="${DIR_LAUNCH}/${dir_prez}/${input_file_name}.jpg"
   disp "Creation de vignettes ..."
   let local duration="$(mediainfo --Inform="General;%Duration%" "${input_file}") / 60000"
   local format_duration=$(mediainfo --Inform="Video;%Duration/String3%" "${input_file}")
@@ -195,7 +196,7 @@ main () {
     create_thumbnail "${release_name}" "${file_bbcode}"
   elif [[ ${path_type} == 'd' ]]; then
     cd "${release_name}"
-    for release_file in ./*; do
+    find . -type f | while IFS=$'\n' read release_file ; do
       release_file=$(echo "${release_file}" | sed 's#\./##g')
       is_video "${release_file}"
       ret=$?
